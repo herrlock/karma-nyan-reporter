@@ -7,11 +7,12 @@ chai.use(require('sinon-chai'));
 
 var expect = chai.expect;
 
-describe('nyanCat.js', function() {
+describe('nyanCat.js test suite', function() {
   var sut;
   var module;
   var configFake;
-  var colorsFake;
+  var drawUtilInstanceFake;
+  var drawUtilFake;
   var rainbowifierFake;
   var dataStoreInstanceFake;
   var dataStoreFake;
@@ -22,9 +23,21 @@ describe('nyanCat.js', function() {
   beforeEach(function(done) {
     configFake = {};
 
-    colorsFake = {
-      'getColorPalette' : sinon.spy(),
+    drawUtilInstanceFake = {
+      'appendRainbow' : sinon.spy(),
+      'drawScoreboard' : sinon.spy(),
+      'drawRainbow' : sinon.spy(),
+      'drawNyanCat' : sinon.spy(),
+      'tick' : true
     };
+
+    drawUtilFake = {
+      'getInstance' : sinon.stub()
+    };
+
+    drawUtilFake
+      .getInstance
+        .returns(drawUtilInstanceFake);
 
     rainbowifierInstanceFake = {
       'rainbowify' : sinon.spy()
@@ -34,7 +47,9 @@ describe('nyanCat.js', function() {
       'getInstance' : sinon.stub()
     };
 
-    rainbowifierFake.getInstance.returns(rainbowifierInstanceFake);
+    rainbowifierFake
+      .getInstance
+        .returns(rainbowifierInstanceFake);
 
     dataStoreInstanceFake = {
       'save' : sinon.spy(),
@@ -45,7 +60,9 @@ describe('nyanCat.js', function() {
       'getInstance' : sinon.stub()
     };
 
-    dataStoreFake.getInstance.returns(dataStoreInstanceFake);
+    dataStoreFake
+      .getInstance
+        .returns(dataStoreInstanceFake);
 
     printersFake = {
       'write' : sinon.spy(),
@@ -69,7 +86,7 @@ describe('nyanCat.js', function() {
     ];
 
     module = rewire('../lib/nyanCat');
-    module.__set__('colors', colorsFake);
+    module.__set__('drawUtil', drawUtilFake);
     module.__set__('rainbowifier', rainbowifierFake);
     module.__set__('dataStore', dataStoreFake);
     module.__set__('printers', printersFake);
@@ -81,10 +98,13 @@ describe('nyanCat.js', function() {
     sut = null;
     module = null;
     configFake = null;
-    colorsFake = null;
+    drawUtilInstanceFake = null;
+    drawUtilFake = null;
     dataStoreInstanceFake = null;
     dataStoreFake = null;
     printersFake = null;
+    rainbowifierInstanceFake = null;
+    rainbowifierFake = null;
     shellUtilFake = null;
     defaultPropertyKeys = null;
     done();
@@ -141,21 +161,16 @@ describe('nyanCat.js', function() {
       sut = new module.NyanCat(null, null, configFake);
 
       props = {
-        'stats' : {},
-        'rainbowifier' : rainbowifierInstanceFake,
-        'colorIndex' : 0,
-        'numberOfLines' : 4,
-        'trajectories' : [[], [], [], []],
-        'nyanCatWidth' : 11,
-        'trajectoryWidthMax' : (shellUtilFake.window.width * 0.75) - 11,
-        'scoreboardWidth' : 5,
-        'tick' : 0,
-        'colors' : colorsFake.getColorPalette(),
         '_browsers' : [],
+        'allResults' : {},
         'browser_logs' : {},
         'browserErrors' : [],
-        'allResults' : {},
+        'colorIndex' : 0,
         'dataStore' : dataStoreInstanceFake,
+        'drawUtil' : drawUtilInstanceFake,
+        'rainbowifier' : rainbowifierInstanceFake,
+        'stats' : {},
+
         'totalTime' : 0,
         'numberOfSlowTests' : 0
       };
@@ -439,100 +454,23 @@ describe('nyanCat.js', function() {
   describe('draw method tests', function() {
     it('should call the correct methods and negate the tick property', function() {
       sut = new module.NyanCat(null, null, configFake);
-      sut.appendRainbow = sinon.spy();
-      sut.drawScoreboard = sinon.spy();
-      sut.drawRainbow = sinon.spy();
-      sut.drawNyanCat = sinon.spy();
-      sut.tick = true;
+      util = sut.drawUtil = drawUtilInstanceFake;
 
       sut.draw();
-      expect(sut.appendRainbow.calledOnce).to.be.true;
-      expect(sut.drawScoreboard.calledOnce).to.be.true;
-      expect(sut.drawRainbow.calledOnce).to.be.true;
-      expect(sut.drawNyanCat.calledOnce).to.be.true;
-      expect(sut.tick).to.be.false;
+      expect(util.appendRainbow.calledOnce).to.be.true;
+      expect(util.drawScoreboard.calledOnce).to.be.true;
+      expect(util.drawRainbow.calledOnce).to.be.true;
+      expect(util.drawNyanCat.calledOnce).to.be.true;
+      expect(util.tick).to.be.false;
 
       sut.draw();
-      expect(sut.appendRainbow.calledTwice).to.be.true;
-      expect(sut.drawScoreboard.calledTwice).to.be.true;
-      expect(sut.drawRainbow.calledTwice).to.be.true;
-      expect(sut.drawNyanCat.calledTwice).to.be.true;
-      expect(sut.tick).to.be.true;
+      expect(util.appendRainbow.calledTwice).to.be.true;
+      expect(util.drawScoreboard.calledTwice).to.be.true;
+      expect(util.drawRainbow.calledTwice).to.be.true;
+      expect(util.drawNyanCat.calledTwice).to.be.true;
+      expect(util.tick).to.be.true;
     });
   });
 
-  /**
-   * drawScoreboard() tests
-   */
 
-  describe('drawScoreboard method tests', function() {
-    var colors;
-    var stats;
-    var numOfLns;
-
-    beforeEach(function(done) {
-      colors = {
-        'pass': 'pass',
-        'fail': 'fail',
-        'skip': 'skip'
-      };
-
-      stats = {
-        'success': 33,
-        'failed': 66,
-        'skipped': 99
-      };
-
-      numOfLns = 111;
-
-      sut = new module.NyanCat(null, null, configFake);
-      sut.colors = colors;
-      sut.stats = stats;
-      sut.cursorUp = sinon.spy();
-      sut.numberOfLines = numOfLns;
-
-      sut.drawScoreboard();
-      done();
-    });
-
-    afterEach(function(done) {
-      colors = null;
-      stats = null;
-      numOfLns = null;
-      done();
-    });
-
-    it('should call the printerFake.write method with the correct values', function() {
-      var write = printersFake.write;
-
-      expect(write.callCount).to.eq(10);
-
-      expect(write.getCall(0).args[0]).to.eq(' ');
-      expect(write.getCall(1).args[0]).to.eq('\u001b[' + colors.pass + 'm' + stats.success + '\u001b[0m');
-      expect(write.getCall(2).args[0]).to.eq('\n');
-
-      expect(write.getCall(3).args[0]).to.eq(' ');
-      expect(write.getCall(4).args[0]).to.eq('\u001b[' + colors.fail + 'm' + stats.failed + '\u001b[0m');
-      expect(write.getCall(5).args[0]).to.eq('\n');
-
-      expect(write.getCall(6).args[0]).to.eq(' ');
-      expect(write.getCall(7).args[0]).to.eq('\u001b[' + colors.skip + 'm' + stats.skipped + '\u001b[0m');
-      expect(write.getCall(8).args[0]).to.eq('\n');
-
-      expect(write.getCall(9).args[0]).to.eq('\n');
-    });
-
-    it('should call cursorUp with numberOfLines', function() {
-      expect(sut.cursorUp.calledOnce).to.be.true;
-      expect(sut.cursorUp.calledWithExactly(numOfLns)).to.be.true;
-    });
-  });
-
-  /**
-   * appendRainbow() tests
-   */
-
-  describe('appendRainbow method tests', function() {
-
-  });
 });
