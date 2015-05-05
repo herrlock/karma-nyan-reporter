@@ -1,3 +1,5 @@
+'use strict';
+
 var rewire = require('rewire');
 var chai = require('chai');
 var sinon = require('sinon');
@@ -13,12 +15,14 @@ describe('nyanCat.js test suite', function() {
   var configFake;
   var drawUtilInstanceFake;
   var drawUtilFake;
+  var rainbowifierInstanceFake;
   var rainbowifierFake;
   var dataStoreInstanceFake;
   var dataStoreFake;
   var printersFake;
   var shellUtilFake;
   var defaultProps;
+  var defaultPropertyKeys;
 
   beforeEach(function(done) {
     configFake = {};
@@ -192,7 +196,7 @@ describe('nyanCat.js test suite', function() {
 
       expect(sut).to.have.keys(Object.keys(props).concat(defaultPropertyKeys));
 
-      for (key in props) {
+      for (var key in props) {
         expect(sut[key]).to.eql(props[key]);
       }
     });
@@ -310,8 +314,8 @@ describe('nyanCat.js test suite', function() {
       sut.onBrowserLog(browser1, log1, null);
       sut.onBrowserLog(browser2, log2, null);
 
-      logs1 = sut.browser_logs[browser1.id].log_messages;
-      logs2 = sut.browser_logs[browser2.id].log_messages;
+      var logs1 = sut.browser_logs[browser1.id].log_messages;
+      var logs2 = sut.browser_logs[browser2.id].log_messages;
 
       expect(logs1.length).to.eq(1);
       expect(logs2.length).to.eq(1);
@@ -454,7 +458,7 @@ describe('nyanCat.js test suite', function() {
   describe('draw method tests', function() {
     it('should call the correct methods and negate the tick property', function() {
       sut = new module.NyanCat(null, null, configFake);
-      util = sut.drawUtil = drawUtilInstanceFake;
+      var util = sut.drawUtil = drawUtilInstanceFake;
 
       sut.draw();
       expect(util.appendRainbow.calledOnce).to.be.true;
