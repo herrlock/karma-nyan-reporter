@@ -1,4 +1,7 @@
-# Logs
+/.project
+/.gradle
+
+#Logs
 logs
 *.log
 
